@@ -1,0 +1,260 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Super Fuzzy</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="vendor/three.min.js"></script>
+		<script src="vendor/ThreeAudio.min.js"></script>
+		<script src="vendor/three.js/Detector.js"></script>
+		<script src="vendor/three.js/Stats.js"></script>
+		<script src="vendor/three.js/postprocessing/EffectComposer.js"></script>
+		<script src="vendor/three.js/postprocessing/RenderPass.js"></script>
+		<script src="vendor/three.js/postprocessing/ShaderPass.js"></script>
+		<script src="vendor/three.js/postprocessing/MaskPass.js"></script>
+		<script src="vendor/three.js/postprocessing/BloomPass.js"></script>		
+		<script src="vendor/threex/THREEx.screenshot.js"></script>
+		<script src="vendor/threex/THREEx.FullScreen.js"></script>
+		<script src="vendor/threex/THREEx.WindowResize.js"></script>
+		<script src="vendor/threex.dragpancontrols.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+		<link  href="css/main.css" rel="stylesheet"/>
+	</head>
+<body>
+	<!-- three.js container -->
+    	<div id="container"></div>
+	<!-- info on screen display -->
+	<div id="info">
+		
+		<div class="bottom" id="inlineDoc" >
+			- <i>p</i> for screenshot
+		</div> 
+	</div> 
+
+	<script type="text/javascript">
+		var stats, scene, renderer;
+		var camera, cameraControl;
+		var composer;
+
+
+		var keys	  = new Array();
+		keys["up"]	  = false;
+		keys["down"]  = false;
+		keys["left"]  = false;
+		keys["right"] = false;
+		var my_x = 0
+		var my_y = 0
+		var my_z = 0
+		var my_rx = 0
+		var my_ry = 0
+		var my_rz = 0
+		var old_date = new Date()
+		old_date = old_date.getTime()
+		var FRAME_RATE = 60.0 / 1000.0
+		var INVERSE_FRAME_RATE = 1.0 / FRAME_RATE
+		var rotation = 0
+		var texture
+		var radius = 1000.0
+		var look_x = 0
+		var look_y = 0
+		var look_z = 0
+		var look = new THREE.Vector3()
+		var sphere
+		var cylinderSide
+		var angle = 0
+		var line
+		var inverse = 1.0
+		var floorMaterial
+
+		$(document).ready(function() {
+			if( !setup() )	animate();
+		});
+
+		// init the scene
+		function setup(){
+			renderer = new THREE.WebGLRenderer();
+
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.getElementById('container').appendChild(renderer.domElement);
+
+			// add Stats.js - https://github.com/mrdoob/stats.js
+			stats = new Stats();
+			stats.domElement.style.position	= 'absolute';
+			stats.domElement.style.bottom	= '0px';
+			document.body.appendChild( stats.domElement );
+
+			// create a new scene
+			scene = new THREE.Scene();
+			
+			look_x = scene.position.x + radius
+			look_y = scene.position.y
+			look_z = scene.position.z
+			look = new THREE.Vector3(look_x,look_y,look_z)
+
+			// put a camera in the scene
+			camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 10000 );
+			scene.add(camera);
+
+			// transparently support window resize
+			THREEx.WindowResize.bind(renderer, camera);
+			// allow 'p' to make screenshot
+			THREEx.Screenshot.bindKey(renderer);
+			// allow 'f' to go fullscreen where this feature is supported
+			if( THREEx.FullScreen.available() ){
+				THREEx.FullScreen.bindKey();		
+				document.getElementById('inlineDoc').innerHTML	+= "- <i>f</i> for fullscreen";
+			}
+
+			//Light
+			var light1 = new THREE.PointLight(0xffffff,5.0);
+			light1.position.set(0,radius*1.2,0);
+			scene.add(light1);
+			var light2 = new THREE.PointLight(0xffffff,5.0);
+			light2.position.set(radius*1.2,0,0);
+			scene.add(light2);
+			var light3 = new THREE.PointLight(0xffffff,5.0);
+			light3.position.set(0,0,radius*1.2);
+			scene.add(light3);
+			var light4 = new THREE.PointLight(0xffffff,5.0);
+			light4.position.set(0,0,-radius*1.2);
+			scene.add(light4);
+			var light5 = new THREE.PointLight(0xffffff,5.0);
+			light5.position.set(0,-radius*1.2,0);
+			scene.add(light5);
+			var light6 = new THREE.PointLight(0xffffff,5.0);
+			light6.position.set(-radius*1.2,0,0);
+			scene.add(light6);
+
+			// FLOOR
+			texture = THREE.ImageUtils.loadTexture('images/checkerboard.jpg')
+			floorMaterial = new THREE.MeshLambertMaterial( {map: texture} );
+			var floorGeometry = new THREE.SphereGeometry(radius, 256, 256, 0, Math.PI*2, 0, Math.PI*2)
+			sphere = new THREE.Mesh(floorGeometry, floorMaterial);
+
+			scene.add(sphere);
+		}
+
+		// animation loop
+		function animate() {
+			date = new Date()
+			date = date.getTime()
+			//alert(date)
+			//alert(INVERSE_FRAME_RATE)
+			if( date - old_date > INVERSE_FRAME_RATE ) {	
+				update();
+
+				// do the render
+				render();
+
+				// update stats
+				stats.update();
+				
+				old_date = date
+			}
+			
+			requestAnimationFrame( animate );
+		}
+
+		// render the scene
+		function render() {
+			// actually render the scene
+			renderer.render( scene, camera );
+		}
+		
+		function update() {
+			//camera.rotate(my_x,my_y,my_z)
+			if( keys["left"] ) {
+				rotation = rotation + .001
+				if( rotation < 0 ) {
+					rotation = Math.PI * 2
+				} else if( rotation > Math.PI * 2 ) {
+					rotation = 0
+				}
+			} else if( keys["right"] ) {
+				rotation = rotation - .001
+				if( rotation < 0 ) {
+					rotation = Math.PI * 2
+				} else if( rotation > Math.PI * 2 ) {
+					rotation = 0
+				}
+			}
+			camera.position.y = Math.sin(rotation) * radius / 2;
+			camera.position.x = radius * 5//.90
+			camera.position.z = Math.cos(rotation) * radius / 2;
+			camera.up = new THREE.Vector3(100000,0,0)
+			camera.lookAt(look)
+
+			inverse = 1.0
+			//angle = angle - .005
+			angle = .005
+			if( angle > 2.0 * Math.PI ) {
+				angle = 0.0
+			} else if( angle < 0 ) {
+				angle = 2.0 * Math.PI
+			}
+			if( angle > Math.PI /*&& angle < 3*Math.PI/2.0*/ ) {
+				inverse = 1.0
+			}
+			//inverse2 = 1.0
+			//if rotation
+
+			//var axis = new THREE.Vector3(Math.cos(rotation),0,-Math.sin(rotation)).normalize()//axis depends on rotation, angle increases with time
+			var axis = new THREE.Vector3(0,inverse*Math.cos(rotation),inverse*(-Math.sin(rotation))).normalize()
+			quaternion = new THREE.Quaternion().setFromAxisAngle( axis, inverse*angle );
+			sphere.quaternion = quaternion;
+		}
+
+
+		
+		$(document.body).on('keyup',function(e) {
+			switch (e.which) {
+				case 37:
+					keys["left"] = false;
+					break;
+				case 39:
+					keys["right"] = false;
+					break;
+				case 38:
+					keys["up"] = false;
+					//alert("Rotation: " + String(camera.rotation.x) + " " + String(camera.rotation.y) + " " + String(camera.rotation.z))
+					break;
+				case 40:
+					keys["down"] = false;
+					//alert("Position: " + String(camera.position.x) + " " + String(camera.position.y) + " " + String(camera.position.z))
+					break;
+				case 32:
+					//fire = false;
+					break;
+			}
+		});
+		
+		$(document.body).on('keydown',function(e) {
+			switch (e.which) {
+				case 37:
+					keys["left"] = true;
+					break;
+				case 39:
+					keys["right"] = true;
+					break;
+				case 38:
+					keys["up"] = true;
+					alert("Rotation: " + String(rotation) + " Angle: " + String(angle))
+					//alert("Rotation: " + String(camera.rotation.x) + " " + String(camera.rotation.y) + " " + String(camera.rotation.z))
+					break;
+				case 40:
+					keys["down"] = true;
+					alert("Position: " + String(camera.position.x) + " " + String(camera.position.y) + " " + String(camera.position.z))
+					break;
+				case 32:
+					//fire = false;
+					break;
+			}
+		});
+
+		//AUDIO threeaudio.js for beat detection
+		//var audioSource = (new ThreeAudio.Source()).load('audio/SubtractiveYou.mp3').play();
+
+	</script>
+</body>
+</html>

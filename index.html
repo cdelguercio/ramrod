@@ -42,7 +42,6 @@
 		var jetski;
 		var deg = Math.PI/180;
 
-
 		init();
 		animate();
 
@@ -73,10 +72,6 @@
 
 			document.addEventListener( 'mousedown', onDocumentMouseDown, false );
 
-
-
-
-
 			// create a new scene
 			scene = new THREE.Scene();
 
@@ -86,7 +81,6 @@
 			camera.rotation.set(-15*deg, 0, 0);
 			scene.add(camera);
 		
-
 			// create a camera contol
 			/*cameraControls	= new THREEx.DragPanControls(camera)*/
 
@@ -104,8 +98,6 @@
 			var light = new THREE.PointLight(0xffffff);
 			light.position.set(0,250,0);
 			scene.add(light);
-
-
 			
 			// Skybox Code
 			var imagePrefix = "images/skybox/bluesky_";
@@ -140,19 +132,16 @@
 				var intersects = raycaster.intersectObjects( objects );
 
 				if ( intersects.length > 0 ) {
-
 					intersects[ 0 ].object.material.color.setHex( Math.random() * 0xffffff );
 					geometry = new THREE.SphereGeometry( .25, 16, 8 );
 					material = new THREE.MeshBasicMaterial( { color: Math.random() * 0xffffff, wireframe:true} );
 					cube = new THREE.Mesh( geometry, material );
 					cube.position = intersects[ 0 ].point;
 					cube.position.y = .25;
-					scene.add( cube );
-					
+					scene.add( cube );	
 				}	
 			}
-
-				
+		
 			// FLOOR
 			var floorTexture = new THREE.ImageUtils.loadTexture( 'images/watertexture.jpg' );
 			floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
@@ -164,26 +153,19 @@
 			floor.rotation.x = Math.PI / 2;
 			scene.add(floor);
 			objects.push( floor );
-			
-
-
 		
 			var axes = new THREE.AxisHelper(50);
 			
 			scene.add(axes);
 
-
-
 			////CHRIS PEEP THIS
-
 
 
 			//JETSKI LOADER
 			var jetskiloader = new THREE.JSONLoader();
-			jetskiloader.load( "js/models/jetski3.js", createJetSki);
+			jetskiloader.load( "js/models/jetski.js", createJetSki);
 
 			function createJetSki ( geometry ){
-					
 					var material = new THREE.MeshNormalMaterial();
 					jetski = new THREE.Mesh( geometry, material);
 					jetski.scale.set (.1,.1,.1);					
@@ -191,34 +173,20 @@
 					jetski.position.set(0,-.55,0);
 					scene.add(jetski);
 					objects.push( jetski );
-
-
 			}
-
-
-		
 		}
-
-			
 
 		// geometry loop
 		function animate() {
-
 			requestAnimationFrame( animate );
 			render();
 			update();
-			
 		}
-		
-		
-		
 
-		function update()
-					{
+		function update() {
 			var delta = clock.getDelta(); // seconds.
 			var moveDistance = 25 * delta; // 200 pixels per second
 			var rotateAngle = Math.PI / 2 * delta;   // pi/2 radians (90 degrees) per seconds
-		
 
 			// move forwards/backwards/left/right
 			if ( keyboard.pressed("W") )
@@ -232,9 +200,7 @@
 			if ( keyboard.pressed("C") )
 			jetski.translateY( moveDistance );
 			if ( keyboard.pressed("G") )
-			jetski.translateY( -moveDistance );	
-					
-				
+			jetski.translateY( -moveDistance );
 
 			// rotate left/right/up/down
 			var rotation_matrix = new THREE.Matrix4().identity();
@@ -247,18 +213,13 @@
 			if ( keyboard.pressed("F") )
 				jetski.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
 			
-			if ( keyboard.pressed("Z") )
-			{
+			if ( keyboard.pressed("Z") ) {
 				jetski.position.set(0,25.1,0);
 				jetski.rotation.set(0,0,0);
 			}
 			
-
 			var tick = clock.elapsedTime;
 			jetski.translateY((Math.sin(Math.PI*tick)/150));
-
-
-
 
 			var relativeCameraOffset = new THREE.Vector3(35,50,-250);
 
@@ -278,15 +239,10 @@
 		// render the scene
 		function render() {
 			renderer.render( scene, camera );
-			
 		}
-
 
 		// AUDIO threeaudio.js for beat detection
 		// var audioSource = (new ThreeAudio.Source()).load('audio/SubtractiveYou.mp3').play();
-
-
-
 	</script>
 </body>
 </html>
