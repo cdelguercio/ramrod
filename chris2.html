@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Super Fuzzy</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="vendor/three.min.js"></script>
+		<script src="vendor/ThreeAudio.min.js"></script>
+		<script src="vendor/three.js/Detector.js"></script>
+		<script src="vendor/three.js/Stats.js"></script>
+		<script src="vendor/three.js/postprocessing/EffectComposer.js"></script>
+		<script src="vendor/three.js/postprocessing/RenderPass.js"></script>
+		<script src="vendor/three.js/postprocessing/ShaderPass.js"></script>
+		<script src="vendor/three.js/postprocessing/MaskPass.js"></script>
+		<script src="vendor/three.js/postprocessing/BloomPass.js"></script>		
+		<script src="vendor/threex/THREEx.screenshot.js"></script>
+		<script src="vendor/threex/THREEx.FullScreen.js"></script>
+		<script src="vendor/threex/THREEx.WindowResize.js"></script>
+		<script src="vendor/threex.dragpancontrols.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+		<link  href="css/main.css" rel="stylesheet"/>
+	</head>
+<body>
+	<!-- three.js container -->
+    	<div id="container"></div>
+	<!-- info on screen display -->
+	<div id="info">
+		
+		<div class="bottom" id="inlineDoc" >
+			- <i>p</i> for screenshot
+		</div> 
+	</div> 
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+			//if( !setup() )	animate();
+		});
+
+		// init the scene
+		//function setup() {
+			renderer = new THREE.WebGLRenderer();
+			
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.getElementById('container').appendChild(renderer.domElement);
+			
+			// create a new scene
+			scene = new THREE.Scene();
+
+			// put a camera in the scene
+			camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.set(0, 0, 50);
+			scene.add(camera);
+			
+			// FLOOR
+			//texture = THREE.ImageUtils.loadTexture('images/checkerboard.jpg')
+			//var floorMaterial = new THREE.MeshLambertMaterial( {map: texture, side: THREE.DoubleSide });
+			//var floorGeometry = new THREE.CircleGeometry(900, 16, 0, Math.PI*2);
+			//alert('test')
+			//var floorGeometry = THREE.SphereGeometry(10, 16, 16)
+			//alert('test2')
+			var floor = new THREE.Mesh(new THREE.SphereGeometry(10, 16, 16), new THREE.MeshNormalMaterial());
+			//floor.rotation.x = 90*deg;
+			scene.add(floor);
+			
+			renderer.render(scene, camera);
+		//}	
+	</script>
+</body>
+</html>
