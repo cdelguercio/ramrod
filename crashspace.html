@@ -1,0 +1,270 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Super Fuzzy</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+		<script src="vendor/three.min.js"></script>
+		<script src="vendor/three.js/Detector.js"></script>
+		<script src="vendor/three.js/Stats.js"></script>
+		<script src="vendor/threex/THREEx.screenshot.js"></script>
+		<script src="vendor/threex/THREEx.FullScreen.js"></script>
+		<script src="vendor/threex/THREEx.WindowResize.js"></script>
+		<script src="vendor/threex/THREEx.KeyboardState.js"></script>
+		<script src="vendor/threex.dragpancontrols.js"></script>
+		<link  href="css/main.css" rel="stylesheet"/>
+	</head>
+<body>
+	<!-- three.js container -->
+    <div id="container"></div>
+	<!-- info on screen display -->
+	<div id="info">
+		<div class="bottom" id="inlineDoc" >
+			- <i>p</i> for screenshot
+		</div> 
+	</div> 
+
+	<script type="text/javascript">
+
+		var keys	  = new Array()
+		keys["up"]	  = false
+		keys["down"]  = false
+		keys["left"]  = false
+		keys["right"] = false
+
+		var old_date = new Date()
+		old_date = old_date.getTime()
+		var FRAME_RATE = 30.0
+		var INVERSE_FRAME_RATE = 1000.0 / FRAME_RATE
+		
+		var renderer
+		var scene
+		var camera
+		var clock = new THREE.Clock()
+		
+		var objects = []
+		var jetski_3
+		var deg = Math.PI/180
+
+		var jetski;
+		var ready = false
+		
+		var JETSKI_ACCELERATION = 3.0 / FRAME_RATE
+		var VELOCITY_MAX = 30.0 / FRAME_RATE
+		var FRICTION = 1.5 / FRAME_RATE
+		var rotateAngle = Math.PI / 2 * INVERSE_FRAME_RATE / 1000;   // pi/2 radians (90 degrees) per seconds
+		
+		function Jetski() {
+			this.acceleration = 0.0
+			this.velocity = 0.0
+			
+			this.update = function() {
+				jetski_3.translateZ( this.velocity )
+				this.velocity += this.acceleration
+				if( this.velocity > VELOCITY_MAX )
+					this.velocity = VELOCITY_MAX
+				if( this.velocity < -VELOCITY_MAX )
+					this.velocity = -VELOCITY_MAX
+				if( this.velocity < 0.0 )
+					if( this.velocity < -FRICTION )
+						this.velocity += FRICTION
+					else
+						this.velocity = 0
+				if( this.velocity > 0.0 )
+					if( this.velocity > FRICTION )
+						this.velocity -= FRICTION
+					else
+						this.velocity = 0
+				
+				if( keys["up"] ) {
+					this.acceleration = JETSKI_ACCELERATION
+				}
+				if( keys["down"] ) {
+					this.acceleration = -JETSKI_ACCELERATION
+				}
+				if( keys["left"] ) {
+					jetski_3.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle)
+				}
+				if( keys["right"] ) {
+					jetski_3.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle)
+				}
+				
+			}
+			
+			this.resetAcceleration = function() {
+				this.acceleration = 0
+			}
+		}
+
+		function animate() {
+			date = new Date()
+			date = date.getTime()
+			if( date - old_date > INVERSE_FRAME_RATE ) {	
+				update()
+				render()
+				
+				old_date = date;
+			}
+			
+			requestAnimationFrame( animate );
+		}
+		
+		function update() {
+			var delta = clock.getDelta() // seconds.
+			var moveDistance = 25 * delta // 200 pixels per second
+			jetski.update()
+
+			var relativeCameraOffset = new THREE.Vector3(0,75,-250);
+
+			var cameraOffset = relativeCameraOffset.applyMatrix4( jetski_3.matrixWorld );
+
+			camera.position.x = cameraOffset.x;
+			camera.position.y = cameraOffset.y;
+			camera.position.z = cameraOffset.z;
+			camera.lookAt( jetski_3.position );
+		}
+		
+		function render() {
+			renderer.render( scene, camera );
+		}
+		
+		$(document.body).on('keyup',function(e) {
+			switch (e.which) {
+				case 37:
+					keys["left"] = false;
+					break;
+				case 39:
+					keys["right"] = false;
+					break;
+				case 38:
+					keys["up"] = false;
+					jetski.acceleration = 0.0
+					break;
+				case 40:
+					keys["down"] = false;
+					jetski.resetAcceleration()
+					break;
+			}
+		});
+		
+		$(document.body).on('keydown',function(e) {
+			switch (e.which) {
+				case 37:
+					keys["left"] = true
+					break;
+				case 39:
+					keys["right"] = true
+					break;
+				case 38:
+					keys["up"] = true
+					break;
+				case 40:
+					keys["down"] = true
+					break;
+			}
+		});
+
+		$(document).ready(function() {
+			setup()
+		});
+		
+		function setup() {
+			if( Detector.webgl ) {
+				renderer = new THREE.WebGLRenderer({
+					antialias				: true,	// to get smoother output
+					preserveDrawingBuffer	: true	// to allow screenshot
+				})
+				renderer.setClearColorHex( 0xBBBBBB, 1 )
+			} else {
+				renderer = new THREE.CanvasRenderer()
+			}
+			renderer.setSize( window.innerWidth, window.innerHeight )
+			document.getElementById('container').appendChild(renderer.domElement)
+			
+			//Stats
+			stats = new Stats();
+			stats.domElement.style.position	= 'absolute'
+			stats.domElement.style.bottom	= '0px'
+			document.body.appendChild( stats.domElement )
+			
+			// create a new scene
+			scene = new THREE.Scene();
+
+			// put a camera in the scene
+			camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 10000 )
+			camera.position.set(15, 10, 25)
+			camera.rotation.set(-15*deg, 0, 0)
+			scene.add(camera)
+
+			// create a camera control
+			//cameraControls = new THREEx.DragPanControls(camera)
+
+			// transparently support window resize
+			THREEx.WindowResize.bind(renderer, camera)
+			// allow 'p' to make screenshot
+			THREEx.Screenshot.bindKey(renderer)
+			// allow 'f' to go fullscreen where this feature is supported
+			if( THREEx.FullScreen.available() ) {
+				THREEx.FullScreen.bindKey()	
+				document.getElementById('inlineDoc').innerHTML	+= "- <i>f</i> for fullscreen"
+			}
+
+			//Light
+			var light = new THREE.PointLight(0xffffff)
+			light.position.set(0,250,0)
+			scene.add(light)
+			
+			// Skybox Code
+			var imagePrefix = "images/skybox/bluesky_"
+			var directions  = ["posx", "negx", "posy", "negy", "posz", "negz"]
+			var imageSuffix = ".jpg"
+			var skyGeometry = new THREE.CubeGeometry( 10000, 10000, 10000 )
+			
+			var materialArray = []
+			for (var i = 0; i < 6; i++)
+				materialArray.push( new THREE.MeshBasicMaterial({
+					map: THREE.ImageUtils.loadTexture( imagePrefix + directions[i] + imageSuffix ),
+					side: THREE.BackSide
+				}))
+			var skyMaterial = new THREE.MeshFaceMaterial( materialArray )
+			var skyBox = new THREE.Mesh( skyGeometry, skyMaterial )
+			scene.add( skyBox );
+			scene.fog = new THREE.FogExp2( 0x9999ff, 0.0015 );
+			// End Skybox Code
+			
+			// FLOOR
+			var floorTexture = new THREE.ImageUtils.loadTexture( 'images/watertexture.jpg' )
+			floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping
+			floorTexture.repeat.set( 20, 20 )
+			var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide, transparent: true, opacity: 0.8  } )
+			var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10)
+			var floor = new THREE.Mesh(floorGeometry, floorMaterial)
+			floor.position.y = 0
+			floor.rotation.x = Math.PI / 2
+			scene.add(floor)
+			objects.push( floor )
+		
+			var axes = new THREE.AxisHelper(50)
+			
+			scene.add(axes)
+			
+			//JETSKI LOADER
+			var jetskiloader = new THREE.JSONLoader()
+			jetskiloader.load( "js/models/jetski.js", createJetSki)
+			jetski = new Jetski()
+		}
+		
+		function createJetSki( geometry ) {
+				var material = new THREE.MeshNormalMaterial()
+				jetski_3 = new THREE.Mesh( geometry, material)
+				jetski_3.scale.set (.1,.1,.1)				
+				jetski_3.rotation.y= 0
+				jetski_3.position.set(0,-.55,0)
+				scene.add( jetski_3 )
+				objects.push( jetski_3 )
+				animate()
+		}
+	</script>
+</body>
+</html>
