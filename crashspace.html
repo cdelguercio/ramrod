@@ -4,7 +4,7 @@
 		<title>Super Fuzzy</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 		<script src="vendor/three.min.js"></script>
 		<script src="vendor/three.js/Detector.js"></script>
 		<script src="vendor/three.js/Stats.js"></script>
@@ -92,8 +92,8 @@
 						this.velocity -= FRICTION
 					else
 						this.velocity = 0
-				this.bob_offset = this.bob_offset + 2.0/FRAME_RATE
-				jetski_3.translateY((Math.sin(Math.PI*this.bob_offset)/150));
+				this.bob_offset = this.bob_offset + 2.0 / FRAME_RATE
+				jetski_3.translateY((Math.sin(Math.PI*this.bob_offset)/40));
 				
 				if( keys["up"] ) {
 					this.acceleration = JETSKI_ACCELERATION
@@ -139,22 +139,12 @@
 						this.roll_angle -= ROLL_FRICTION
 					else
 						this.roll_angle = 0.0
-				//turn
-				//jetski_3.rotateOnAxis( new THREE.Vector3(0,1,0), this.rotate_angle)
-				//rotateAroundWorldAxis( jetski_3, new THREE.Vector3(0,1,0), this.rotate_angle )
+
 				rotate_quaternion = new THREE.Quaternion().setFromAxisAngle( y_axis, this.rotate_angle );
 				roll_quaternion = new THREE.Quaternion().setFromAxisAngle( neg_z_axis, this.roll_angle );
 				quaternion = rotate_quaternion
 				quaternion.multiply(roll_quaternion)
 				jetski_3.quaternion = quaternion;
-				//roll
-				//jetski_3.rotation.z = -this.roll_angle
-				//var zVec = new THREE.Vector3( 0, 0, 1 );
-				//zVec.applyQuaternion( jetski_3.quaternion );
-				//jetski_3.rotateOnAxis( jetski_3.rotation, this.rotate_angle)
-				//jetski_3.rotateOnAxis( new THREE.Vector3(0,0,-1), this.rotate_angle)
-				//rotateAroundObjectAxis( jetski_3, jetski_3., this.rotate_angle )
-				
 			}
 			
 			this.resetAcceleration = function() {
