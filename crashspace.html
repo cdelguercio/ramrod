@@ -32,6 +32,14 @@
 		keys["down"]  = false
 		keys["left"]  = false
 		keys["right"] = false
+		
+		var x_axis = new THREE.Vector3(1,0,0)
+		var y_axis = new THREE.Vector3(0,1,0)
+		var z_axis = new THREE.Vector3(0,0,1)
+		
+		var neg_x_axis = new THREE.Vector3(-1,0,0)
+		var neg_y_axis = new THREE.Vector3(0,-1,0)
+		var neg_z_axis = new THREE.Vector3(0,0,-1)
 
 		var old_date = new Date()
 		old_date = old_date.getTime()
@@ -53,11 +61,19 @@
 		var JETSKI_ACCELERATION = 3.0 / FRAME_RATE
 		var VELOCITY_MAX = 30.0 / FRAME_RATE
 		var FRICTION = 1.5 / FRAME_RATE
-		var rotateAngle = Math.PI / 2 * INVERSE_FRAME_RATE / 1000;   // pi/2 radians (90 degrees) per seconds
+		var ROTATE_ANGLE_ACCELERATION = 1.0 / FRAME_RATE
+		var ROTATE_FRICTION = 0.3 / FRAME_RATE
+		var ROTATE_ANGLE_MAX = Math.PI / 2 * 10 * INVERSE_FRAME_RATE / 1000;   // pi/2 radians (90 degrees) per seconds
+		var ROLL_ANGLE_ACCELERATION = 1.0 / FRAME_RATE
+		var ROLL_FRICTION = 0.3 / FRAME_RATE
+		var ROLL_ANGLE_MAX = 4.0 * INVERSE_FRAME_RATE / 1000;   // pi/2 radians (90 degrees) per seconds
 		
 		function Jetski() {
 			this.acceleration = 0.0
 			this.velocity = 0.0
+			this.bob_offset = 0.0
+			this.rotate_angle = 0.0
+			this.roll_angle = 0.0
 			
 			this.update = function() {
 				jetski_3.translateZ( this.velocity )
@@ -76,6 +92,8 @@
 						this.velocity -= FRICTION
 					else
 						this.velocity = 0
+				this.bob_offset = this.bob_offset + 2.0/FRAME_RATE
+				jetski_3.translateY((Math.sin(Math.PI*this.bob_offset)/150));
 				
 				if( keys["up"] ) {
 					this.acceleration = JETSKI_ACCELERATION
@@ -84,11 +102,58 @@
 					this.acceleration = -JETSKI_ACCELERATION
 				}
 				if( keys["left"] ) {
-					jetski_3.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle)
+					this.rotate_angle = this.rotate_angle + ROTATE_ANGLE_ACCELERATION
+					this.roll_angle = this.roll_angle + ROLL_ANGLE_ACCELERATION
 				}
 				if( keys["right"] ) {
-					jetski_3.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle)
+					this.rotate_angle = this.rotate_angle - ROTATE_ANGLE_ACCELERATION
+					this.roll_angle = this.roll_angle - ROLL_ANGLE_ACCELERATION
 				}
+				//rotation
+				/*if( this.rotate_angle > ROTATE_ANGLE_MAX )
+					this.rotate_angle = ROTATE_ANGLE_MAX
+				if( this.rotate_angle < -ROTATE_ANGLE_MAX )
+					this.rotate_angle = -ROTATE_ANGLE_MAX
+				if( this.rotate_angle < 0.0 )
+					if( this.rotate_angle < ROTATE_FRICTION )
+						this.rotate_angle += ROTATE_FRICTION
+					else
+						this.rotate_angle = 0.0
+				if( this.rotate_angle > 0.0 )
+					if( this.rotate_angle > ROTATE_FRICTION )
+						this.rotate_angle -= ROTATE_FRICTION
+					else
+						this.rotate_angle = 0.0*/
+				//roll
+				if( this.roll_angle > ROLL_ANGLE_MAX )
+					this.roll_angle = ROLL_ANGLE_MAX
+				if( this.roll_angle < -ROLL_ANGLE_MAX )
+					this.roll_angle = -ROLL_ANGLE_MAX
+				if( this.roll_angle < 0.0 )
+					if( this.roll_angle < ROLL_FRICTION )
+						this.roll_angle += ROLL_FRICTION
+					else
+						this.roll_angle = 0.0
+				if( this.roll_angle > 0.0 )
+					if( this.roll_angle > ROLL_FRICTION )
+						this.roll_angle -= ROLL_FRICTION
+					else
+						this.roll_angle = 0.0
+				//turn
+				//jetski_3.rotateOnAxis( new THREE.Vector3(0,1,0), this.rotate_angle)
+				//rotateAroundWorldAxis( jetski_3, new THREE.Vector3(0,1,0), this.rotate_angle )
+				rotate_quaternion = new THREE.Quaternion().setFromAxisAngle( y_axis, this.rotate_angle );
+				roll_quaternion = new THREE.Quaternion().setFromAxisAngle( neg_z_axis, this.roll_angle );
+				quaternion = rotate_quaternion
+				quaternion.multiply(roll_quaternion)
+				jetski_3.quaternion = quaternion;
+				//roll
+				//jetski_3.rotation.z = -this.roll_angle
+				//var zVec = new THREE.Vector3( 0, 0, 1 );
+				//zVec.applyQuaternion( jetski_3.quaternion );
+				//jetski_3.rotateOnAxis( jetski_3.rotation, this.rotate_angle)
+				//jetski_3.rotateOnAxis( new THREE.Vector3(0,0,-1), this.rotate_angle)
+				//rotateAroundObjectAxis( jetski_3, jetski_3., this.rotate_angle )
 				
 			}
 			
@@ -97,22 +162,9 @@
 			}
 		}
 
-		function animate() {
-			date = new Date()
-			date = date.getTime()
-			if( date - old_date > INVERSE_FRAME_RATE ) {	
-				update()
-				render()
-				
-				old_date = date;
-			}
-			
-			requestAnimationFrame( animate );
-		}
-		
 		function update() {
-			var delta = clock.getDelta() // seconds.
-			var moveDistance = 25 * delta // 200 pixels per second
+			//var delta = clock.getDelta() // seconds.
+			//var moveDistance = 25 * delta // 200 pixels per second
 			jetski.update()
 
 			var relativeCameraOffset = new THREE.Vector3(0,75,-250);
@@ -127,6 +179,20 @@
 		
 		function render() {
 			renderer.render( scene, camera );
+		}
+
+		function loop() {
+			date = new Date()
+			date = date.getTime()
+			if( date - old_date > INVERSE_FRAME_RATE ) {
+				//console.log(1000.0 / (date - old_date))	
+				update()
+				render()
+				
+				old_date = date;
+			}
+			
+			requestAnimationFrame( loop );
 		}
 		
 		$(document.body).on('keyup',function(e) {
@@ -263,7 +329,25 @@
 				jetski_3.position.set(0,-.55,0)
 				scene.add( jetski_3 )
 				objects.push( jetski_3 )
-				animate()
+				loop()
+		}
+		
+		// Rotate an object around an axis in object space
+		var rotationMatrix
+		function rotateAroundObjectAxis( object, axis, radians ) {
+			rotationMatrix = new THREE.Matrix4();
+			rotationMatrix.makeRotationAxis( axis.normalize(), radians );
+			object.matrix.multiply( rotationMatrix ); // post-multiply
+			object.rotation.setEulerFromRotationMatrix(object.matrix, object.order);
+		}
+ 
+		// Rotate an object around an axis in world space (the axis passes through the object's position)
+		function rotateAroundWorldAxis( object, axis, radians ) {
+			var rotWorldMatrix = new THREE.Matrix4();
+			rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
+			rotWorldMatrix.multiply(object.matrix); // pre-multiply
+			object.matrix = rotWorldMatrix;
+			object.rotation.setFromRotationMatrix(object.matrix);
 		}
 	</script>
 </body>
