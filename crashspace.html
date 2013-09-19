@@ -32,6 +32,7 @@
 		keys["down"]  = false
 		keys["left"]  = false
 		keys["right"] = false
+		keys["space"] = false
 		
 		var x_axis = new THREE.Vector3(1,0,0)
 		var y_axis = new THREE.Vector3(0,1,0)
@@ -58,15 +59,22 @@
 		var jetski;
 		var ready = false
 		
+		var G = 7.0 / FRAME_RATE
+		var BOB_VELOCITY = G * 1.5
+		var JETSKI_BUOYANCY = G * 4.0
+		var JETSKI_BUOYANCY_MAX = 20.0 / FRAME_RATE
+		var JUMP_VELOCITY = 50.0 / FRAME_RATE
 		var JETSKI_ACCELERATION = 3.0 / FRAME_RATE
+		var JETSKI_HEIGHT = 2.5
 		var VELOCITY_MAX = 30.0 / FRAME_RATE
 		var FRICTION = 1.5 / FRAME_RATE
+		var WATER_FRICTION = 3.0 / FRAME_RATE
 		var ROTATE_ANGLE_ACCELERATION = 1.0 / FRAME_RATE
 		var ROTATE_FRICTION = 0.3 / FRAME_RATE
-		var ROTATE_ANGLE_MAX = Math.PI / 2 * 10 * INVERSE_FRAME_RATE / 1000;   // pi/2 radians (90 degrees) per seconds
+		var ROTATE_ANGLE_MAX = Math.PI / 2 * 10 / FRAME_RATE;   // pi/2 radians (90 degrees) per seconds
 		var ROLL_ANGLE_ACCELERATION = 1.0 / FRAME_RATE
 		var ROLL_FRICTION = 0.3 / FRAME_RATE
-		var ROLL_ANGLE_MAX = 4.0 * INVERSE_FRAME_RATE / 1000;   // pi/2 radians (90 degrees) per seconds
+		var ROLL_ANGLE_MAX = 4.0 / FRAME_RATE;   // pi/2 radians (90 degrees) per seconds
 		
 		function Jetski() {
 			this.acceleration = 0.0
@@ -74,8 +82,50 @@
 			this.bob_offset = 0.0
 			this.rotate_angle = 0.0
 			this.roll_angle = 0.0
+			this.up_velocity = 0.0
+			
+			this.jump = function() {
+				this.up_velocity = JUMP_VELOCITY
+			}
 			
 			this.update = function() {
+				//gravity
+				this.up_velocity += Math.random() * 0.1
+				this.up_velocity -= G
+				if( jetski_3.position.y < 0.0 ) {
+					if ( jetski_3.position.y > -JETSKI_HEIGHT )
+						this.up_velocity += JETSKI_BUOYANCY / 3.0
+					else 
+						this.up_velocity += JETSKI_BUOYANCY
+					if( this.up_velocity > JETSKI_BUOYANCY_MAX )
+						this.up_velocity = JETSKI_BUOYANCY_MAX
+					if( this.up_velocity > 0 )
+						if( this.up_velocity > WATER_FRICTION )
+							this.up_velocity -= WATER_FRICTION
+						else// if( this.up_velocity > WATER_FRICTION / 2.0 )
+							this.up_velocity = 0.0
+							//this.up_velocity -= WATER_FRICTION / 2.0
+					else {
+						if( this.up_velocity < -WATER_FRICTION )
+							this.up_velocity += WATER_FRICTION
+						else// if( this.up_velocity < WATER_FRICTION / 2.0 )
+							this.up_velocity = 0.0
+							//this.up_velocity += WATER_FRICTION / 2.0
+					}
+				}
+				if( keys["space"] ) {
+					keys["space"] = false
+					this.jump()
+				}
+				jetski_3.translateY(this.up_velocity);
+
+				//bob
+				//this.bob_offset = this.bob_offset + 2.0 / FRAME_RATE
+				//jetski.up_velocity += Math.sin(Math.PI*this.bob_offset)/40;
+				if( jetski_3.position.y > -0.7 && jetski_3.position.y < 0.1 && this.up_velocity > -1.0 && this.up_velocity < 1.0 )
+					this.up_velocity += BOB_VELOCITY
+
+				//forward
 				jetski_3.translateZ( this.velocity )
 				this.velocity += this.acceleration
 				if( this.velocity > VELOCITY_MAX )
@@ -86,14 +136,12 @@
 					if( this.velocity < -FRICTION )
 						this.velocity += FRICTION
 					else
-						this.velocity = 0
+						this.velocity = 0.0
 				if( this.velocity > 0.0 )
 					if( this.velocity > FRICTION )
 						this.velocity -= FRICTION
 					else
-						this.velocity = 0
-				this.bob_offset = this.bob_offset + 2.0 / FRAME_RATE
-				jetski_3.translateY((Math.sin(Math.PI*this.bob_offset)/40));
+						this.velocity = 0.0
 				
 				if( keys["up"] ) {
 					this.acceleration = JETSKI_ACCELERATION
@@ -109,6 +157,7 @@
 					this.rotate_angle = this.rotate_angle - ROTATE_ANGLE_ACCELERATION
 					this.roll_angle = this.roll_angle - ROLL_ANGLE_ACCELERATION
 				}
+				
 				//rotation
 				/*if( this.rotate_angle > ROTATE_ANGLE_MAX )
 					this.rotate_angle = ROTATE_ANGLE_MAX
@@ -148,7 +197,7 @@
 			}
 			
 			this.resetAcceleration = function() {
-				this.acceleration = 0
+				this.acceleration = 0.0
 			}
 		}
 
@@ -175,7 +224,8 @@
 			date = new Date()
 			date = date.getTime()
 			if( date - old_date > INVERSE_FRAME_RATE ) {
-				//console.log(1000.0 / (date - old_date))	
+				//console.log(1000.0 / (date - old_date))
+				console.log(jetski_3.position.y)
 				update()
 				render()
 				
@@ -217,6 +267,9 @@
 					break;
 				case 40:
 					keys["down"] = true
+					break;
+				case 32:
+					keys["space"] = true
 					break;
 			}
 		});
